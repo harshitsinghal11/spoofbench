@@ -1,0 +1,28 @@
+diff --git a/project/app/src/main/java/org/owntracks/android/services/BackgroundService.kt b/project/app/src/main/java/org/owntracks/android/services/BackgroundService.kt
+index 916f1e38..f3000fe1 100644
+--- a/project/app/src/main/java/org/owntracks/android/services/BackgroundService.kt
++++ b/project/app/src/main/java/org/owntracks/android/services/BackgroundService.kt
+@@ -862,6 +862,13 @@ class BackgroundService : LifecycleService(), Preferences.OnPreferenceChangeList
+ 
+     private fun onLocationChanged(location: Location, reportType: MessageLocation.ReportType) {
+       Timber.v("backgroundservice location update received: $location, report type $reportType")
++      val isMock = if (android.os.Build.VERSION.SDK_INT >= 31) location.isMock
++      else @Suppress("DEPRECATION") location.isFromMockProvider
++      android.util.Log.d(
++          "SBPROBE",
++          "lat=${location.latitude} lon=${location.longitude} acc=${location.accuracy} " +
++              "provider=${location.provider} isMock=$isMock t=${location.time} reportType=$reportType"
++      )
+       lifecycleCoroutineScope.launch { locationProcessor.onLocationChanged(location, reportType) }
+     }
+ 
+diff --git a/project/gradle.properties b/project/gradle.properties
+index ab10d12a..ab810c8f 100644
+--- a/project/gradle.properties
++++ b/project/gradle.properties
+@@ -32,3 +32,5 @@ org.gradle.jvmargs=-Xmx4096m -XX:+UseParallelGC -XX:MaxMetaspaceSize=1g -Dfile.e
+ 
+ # Enabled parallel sync for Gradle 9.4+
+ org.gradle.tooling.parallel=true
++
++org.gradle.java.home=C:\\Program Files\\Android\\Android Studio\\jbr
