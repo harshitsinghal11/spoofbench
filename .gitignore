@@ -1,0 +1,16 @@
+# Build outputs
+**/bin/
+**/build/
+.gradle/
+
+# Frida binary - download separately
+frida-server-17.25.2-android-x86_64
+
+# Android Studio
+.idea/
+*.iml
+local.properties
+
+# OS files
+.DS_Store
+Thumbs.db
