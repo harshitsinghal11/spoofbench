@@ -2,6 +2,7 @@ package com.spoofbench.defender.core
 
 import com.spoofbench.defender.core.signals.MockFlagSignal
 import com.spoofbench.defender.core.signals.PhysicsSignal
+import com.spoofbench.defender.core.signals.RegularitySignal
 import kotlin.math.roundToInt
 
 class DefaultLocationTrustEngine(
@@ -10,11 +11,13 @@ class DefaultLocationTrustEngine(
 
     private val physicsSignal = PhysicsSignal()
     private val mockFlagSignal = MockFlagSignal()
+    private val regularitySignal = RegularitySignal()
 
     override fun onLocation(event: LocationEvent): Verdict {
         val evidence = mapOf(
             "mockFlag" to mockFlagSignal.evaluate(event),
-            "physics" to physicsSignal.evaluate(event)
+            "physics" to physicsSignal.evaluate(event),
+            "regularity" to regularitySignal.evaluate(event)
         )
         val worst = evidence.values.maxOrNull() ?: 0.0
         val trust = ((1.0 - worst) * 100).roundToInt().coerceIn(0, 100)
@@ -27,7 +30,7 @@ class DefaultLocationTrustEngine(
     }
 
     override fun onImu(event: ImuEvent) {
-        // not used by any signal yet - wired in for Phase 7 (sensor-consistency signal)
+        // wired in for Phase 7 (sensor-consistency signal)
     }
 
     override fun reset() {

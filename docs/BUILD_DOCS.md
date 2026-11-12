@@ -61,23 +61,9 @@
   `provider=fused`.
 
 
-  ## Phase 5 — Defender core — 🚧 In Progress
+## Phase 5 — Defender core — 🚧 In Progress (update)
 
-- Created `defender-core` as a standalone pure-Kotlin/JVM Gradle project
-  (no Android dependencies) — reused the Gradle wrapper from the
-  OwnTracks checkout to avoid re-downloading/version mismatches.
-- Built first two detection signals, each tested independently:
-  - `PhysicsSignal` — flags implausible speed/"teleport" between
-    consecutive fixes (haversine distance / time delta).
-  - `MockFlagSignal` — flags the OS-reported mock-location flag.
-- Built `DefaultLocationTrustEngine` combining both into a single
-  0-100 trust score + flag decision.
-- Fixed one Gradle issue: `useJUnitPlatform()` alone wasn't enough on
-  this Gradle version — needed an explicit
-  `testRuntimeOnly("org.junit.platform:junit-platform-launcher")`
-  dependency.
-- All 5 unit tests passing.
-
-**Still to do:** more signals (regularity, cross-provider consistency),
-the offline CSV-replay harness, and later the thin Android adapter
-module that wires this into a real app.
+- Added third signal: `RegularitySignal` — flags location updates
+  arriving at suspiciously perfect, unvarying intervals (real GNSS
+  fixes have natural timing jitter; many synthetic feeds don't).
+- Wired into `DefaultLocationTrustEngine`. 7/7 unit tests passing.
