@@ -24,3 +24,9 @@ include(":app")
 rootProject.name = "owntracks-android"
 
 include(":location-kalman")
+
+includeBuild("../../defender-core") {
+    dependencySubstitution {
+        substitute(module("com.spoofbench.defender:defender-core")).using(project(":"))
+    }
+}

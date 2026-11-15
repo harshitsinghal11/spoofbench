@@ -1,5 +1,6 @@
 package org.owntracks.android.services
-
+import com.spoofbench.defender.core.DefaultLocationTrustEngine
+import com.spoofbench.defender.core.LocationEvent
 import android.Manifest
 import android.app.ActivityManager
 import android.app.AlarmManager
@@ -846,6 +847,8 @@ class BackgroundService : LifecycleService(), Preferences.OnPreferenceChangeList
       private val locationProcessor: LocationProcessor,
       private val lifecycleCoroutineScope: LifecycleCoroutineScope,
   ) : LocationCallback {
+      private val trustEngine = DefaultLocationTrustEngine()
+
 
     override fun onLocationAvailability(locationAvailability: LocationAvailability) {
       Timber.v("Location availability $locationAvailability")
@@ -861,16 +864,36 @@ class BackgroundService : LifecycleService(), Preferences.OnPreferenceChangeList
     }
 
     private fun onLocationChanged(location: Location, reportType: MessageLocation.ReportType) {
-      Timber.v("backgroundservice location update received: $location, report type $reportType")
-      val isMock = if (android.os.Build.VERSION.SDK_INT >= 31) location.isMock
-      else @Suppress("DEPRECATION") location.isFromMockProvider
-      android.util.Log.d(
-          "SBPROBE",
-          "lat=${location.latitude} lon=${location.longitude} acc=${location.accuracy} " +
-              "provider=${location.provider} isMock=$isMock t=${location.time} reportType=$reportType"
-      )
-      lifecycleCoroutineScope.launch { locationProcessor.onLocationChanged(location, reportType) }
-    }
+  Timber.v("backgroundservice location update received: $location, report type $reportType")
+  val isMock = if (android.os.Build.VERSION.SDK_INT >= 31) location.isMock
+  else @Suppress("DEPRECATION") location.isFromMockProvider
+  android.util.Log.d(
+      "SBPROBE",
+      "lat=${location.latitude} lon=${location.longitude} acc=${location.accuracy} " +
+          "provider=${location.provider} isMock=$isMock t=${location.time} reportType=$reportType"
+  )
+
+  val event = LocationEvent(
+      tNs = location.time * 1_000_000L,
+      lat = location.latitude,
+      lon = location.longitude,
+      accuracyM = if (location.hasAccuracy()) location.accuracy else null,
+      speedMps = if (location.hasSpeed()) location.speed else null,
+      bearingDeg = if (location.hasBearing()) location.bearing else null,
+      altM = if (location.hasAltitude()) location.altitude else null,
+      provider = location.provider ?: "unknown",
+      isMock = isMock,
+      elapsedRealtimeNs = location.elapsedRealtimeNanos,
+      satellites = null
+  )
+  val verdict = trustEngine.onLocation(event)
+  android.util.Log.d(
+      "SBVERDICT",
+      "trust=${verdict.trust} flagged=${verdict.flagged} evidence=${verdict.evidence}"
+  )
+
+  lifecycleCoroutineScope.launch { locationProcessor.onLocationChanged(location, reportType) }
+}
 
     override fun toString(): String {
       return "Backgroundservice callback[$reportType] "

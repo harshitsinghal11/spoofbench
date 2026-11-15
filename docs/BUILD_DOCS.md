@@ -127,3 +127,50 @@ attack tier is being built, per the brief's signal list):
 - Hook-integrity/instrumentation detection — paired with Phase 6's T2b.
 
 **Still to do:** 2 more GPS-only signals, then move into Phase 6.
+
+
+
+## Phase 6 — Attack scripts (T0) — 🚧 In Progress
+
+- Built `attacker-t0`: a standalone Android app (`com.spoofbench.attacker`) whose
+  only job is to feed a fake location into the OS using Android's built-in
+  mock-location test-provider API (`LocationManager.addTestProvider` +
+  `setTestProviderLocation`), scripted/repeatable via adb (no manual taps).
+- Issues hit and fixed:
+  1. `addTestProvider`'s power/accuracy params changed on newer SDKs —
+     `Criteria.POWER_LOW`/`ACCURACY_FINE` had to be replaced with
+     `ProviderProperties.POWER_USAGE_LOW`/`ACCURACY_FINE`.
+  2. Starting the service from `adb` hit Android's background-service-start
+     restriction (`Error: app is in background`). First tried converting it
+     into a foreground service, which opened a worse problem: on newer
+     Android (targetSdk 36 effective), a *location-type* foreground service
+     can't be started via adb at all without the app already being in a
+     visible/foreground state — hit both a missing-permission
+     `SecurityException` and then a `ForegroundServiceStartNotAllowedException`.
+  3. Reverted to a plain (non-foreground) `Service`, and instead launch
+     `MainActivity` via `adb shell am start` immediately before
+     `am start-service` — this puts the app briefly into a "visible" state,
+     which is enough for the OS to allow the plain service to start.
+- **Verified end to end:** ran the T0 attack (lat=28.6139, lon=77.2090,
+  gps+network providers, 1s interval) against the real OwnTracks target.
+  `SBPROBE` ground-truth log confirmed OwnTracks ingested the fake location
+  unquestioned: `lat=28.6139 lon=77.209 provider=gps isMock=true`. Confirmed
+  live on the OwnTracks map UI too — pin jumped to the fake coordinates.
+  After the attack duration, test providers were cleaned up (`onDestroy`)
+  and the app correctly reverted to the real location.
+- This is the **unprotected baseline** for T0 — expected to be trivially
+  caught later by `MockFlagSignal` alone once Defender is wired in.
+
+**Still to do:** wire `defender-core` into OwnTracks (so the same attack can
+be re-run "protected" and compared side by side), then build T1.
+
+
+- **Integrated Defender-core into OwnTracks** via a Gradle composite build
+  (`includeBuild` + dependency substitution) — `BackgroundService.kt`'s
+  `onLocationChanged` now runs every incoming location through
+  `DefaultLocationTrustEngine.onLocation()` alongside the existing
+  `SBPROBE` ground-truth log, logging the verdict as `SBVERDICT`.
+- **Verified the full comparison for T0:** re-ran the same T0 attack with
+  Defender wired in — every fake-location update during the attack was
+  flagged (`trust=0, flagged=true, mockFlag=1.0`). This completes the
+  unprotected-vs-protected comparison for T0.

@@ -2,6 +2,8 @@ plugins {
     kotlin("jvm") version "2.0.21"
     application
 }
+group = "com.spoofbench.defender"
+version = "0.1.0"
 
 repositories {
     mavenCentral()

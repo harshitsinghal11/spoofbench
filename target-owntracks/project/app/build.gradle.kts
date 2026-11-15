@@ -247,6 +247,8 @@ dependencies {
   implementation(libs.paho.mqttclient)
   implementation(libs.okhttp)
 
+  implementation("com.spoofbench.defender:defender-core")
+
   // Utility libraries
   implementation(libs.bundles.hilt)
   implementation(libs.square.tape2)
